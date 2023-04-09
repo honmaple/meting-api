@@ -1,0 +1,46 @@
+** Meting-API
+   基于 [[https://github.com/Binaryify/NeteaseCloudMusicApi][NeteaseCloudMusicApi]] 的服务端API，主要用于替换 [[https://github.com/metowolf/MetingJS][MetingJS]] 的默认API, 当前 *仅支持网易云音乐*
+
+** 依赖
+   需要自行部署 [[https://github.com/Binaryify/NeteaseCloudMusicApi][NeteaseCloudMusicApi]]
+   #+begin_example
+   └──╼ docker run --rm -p 3000:3000 binaryify/netease_cloud_music_api
+   #+end_example
+
+** 使用
+   #+begin_example
+   └──╼ go build .
+   └──╼ ./meting-api --help
+   NAME:
+      meting-api - meting-api
+
+   USAGE:
+      meting-api [global options] command [command options] [arguments...]
+
+   COMMANDS:
+      help, h  Shows a list of commands or help for one command
+
+   GLOBAL OPTIONS:
+      --api value             netease api
+      --addr value, -a value  listen addr
+      --host value            server domain
+      --help, -h              show help
+   #+end_example
+*** 服务端
+    #+begin_example
+   └──╼ ./meting-api --api {NeteaseCloudMusicApi部署地址} --host {当前服务对外接口: https://example.com}
+    #+end_example
+
+*** 网页端
+    #+begin_src html
+    <meting-js
+      server="netease"
+      type="artist"
+      id="6452">
+    </meting-js>
+    <script type="text/javascript">
+      var meting_api='http://localhost:8000/aplayer?server=:server&type=:type&id=:id&auth=:auth&r=:r';
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
+    #+end_src
