@@ -5,16 +5,20 @@ go 1.19
 require (
 	github.com/honmaple/forest v0.0.0-20220905062346-bf8f8696ecb4
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
+	github.com/nutsdb/nutsdb v1.0.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.18.1
 	github.com/tidwall/gjson v1.14.4
 	github.com/urfave/cli/v2 v2.25.1
-	golang.org/x/crypto v0.16.0
 )
 
 require (
+	github.com/antlabs/stl v0.0.1 // indirect
+	github.com/antlabs/timer v0.0.11 // indirect
+	github.com/bwmarrin/snowflake v0.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/lestrrat-go/strftime v1.0.6 // indirect
@@ -30,9 +34,12 @@ require (
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/tidwall/btree v1.6.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
+	github.com/xujiajun/mmap-go v1.0.1 // indirect
+	github.com/xujiajun/utils v0.0.0-20220904132955-5f7c5b914235 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect

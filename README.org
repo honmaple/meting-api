@@ -32,6 +32,20 @@
     Listening and serving HTTP on :8000
     #+end_example
 
+    默认将会使用缓存:
+    - 禁用缓存
+      #+begin_example
+      └──╼ ./meting-api -D --set-config cache.path=""
+      #+end_example
+    - 修改缓存目录(默认为 =./cache=)
+      #+begin_example
+      └──╼ ./meting-api -D --set-config cache.path="/tmp/meting-cache"
+      #+end_example
+    - 修改缓存过期时间(默认为 =3600= 秒)
+      #+begin_example
+      └──╼ ./meting-api -D --set-config cache.ttl=60
+      #+end_example
+
 *** 网页端
     #+begin_src html
     <meting-js

@@ -2,21 +2,26 @@ package app
 
 import (
 	"io/ioutil"
-	"meting-api/music"
 	"os"
 	"strings"
 
+	"meting-api/music"
+
 	"github.com/honmaple/forest"
 	"github.com/honmaple/forest/middleware"
+	"github.com/nutsdb/nutsdb"
 )
 
 type App struct {
-	log    *Logger
-	Config *Config
+	Log    *Logger
+	Cache  *nutsdb.DB
 	Music  *music.Music
+	Config *Config
 }
 
 func (app *App) Run() error {
+	defer app.Close()
+
 	conf := app.Config
 
 	srv := forest.New()
@@ -40,7 +45,8 @@ func (app *App) Run() error {
 	}
 
 	srv.Use(middleware.Logger(), middleware.CorsWithConfig(corsConfig))
-	srv.GET("/meting", app.aplayer)
+	srv.Use(app.cacheResponse)
+	srv.GET("/meting", app.meting)
 	return srv.Start(conf.GetString("server.addr"))
 }
 
@@ -66,13 +72,22 @@ func (app *App) Init(file string, strs ...string) error {
 			conf.Set(c[0], c[1])
 		}
 	}
-
+	if err := app.initCache(); err != nil {
+		return err
+	}
 	log, err := NewLogger(conf)
 	if err != nil {
 		return err
 	}
-	app.log = log
+	app.Log = log
 	app.Music = music.New(app.Config.Viper)
+	return nil
+}
+
+func (app *App) Close() error {
+	if app.Cache != nil {
+		return app.Cache.Close()
+	}
 	return nil
 }
 

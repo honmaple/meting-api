@@ -6,6 +6,8 @@ import (
 
 var (
 	defaultConfig = map[string]interface{}{
+		"cache.ttl":                  3600,
+		"cache.path":                 "./cache",
 		"server.addr":                ":8000",
 		"server.mode":                "",
 		"logger.out":                 "stdout",

@@ -17,7 +17,7 @@ type (
 	}
 )
 
-func (app *App) result(c forest.Context, server string, song *music.Song) *Result {
+func (app *App) toResult(c forest.Context, server string, song *music.Song) *Result {
 	return &Result{
 		Title:  song.Name,
 		Author: song.GetArtist(),
@@ -27,7 +27,7 @@ func (app *App) result(c forest.Context, server string, song *music.Song) *Resul
 	}
 }
 
-func (app *App) aplayer(c forest.Context) error {
+func (app *App) meting(c forest.Context) error {
 	id := c.QueryParam("id")
 	if id == "" {
 		return c.JSON(400, map[string]interface{}{"msg": "参数错误123"})
@@ -45,7 +45,7 @@ func (app *App) aplayer(c forest.Context) error {
 		}
 		results := make([]*Result, len(data))
 		for i, song := range data {
-			results[i] = app.result(c, server, song)
+			results[i] = app.toResult(c, server, song)
 		}
 		return c.JSON(200, results)
 	case "song":
@@ -54,7 +54,7 @@ func (app *App) aplayer(c forest.Context) error {
 			return c.String(400, err.Error())
 		}
 		results := []*Result{
-			app.result(c, server, data),
+			app.toResult(c, server, data),
 		}
 		return c.JSON(200, results)
 	case "url":
@@ -82,7 +82,7 @@ func (app *App) aplayer(c forest.Context) error {
 		}
 		results := make([]*Result, len(data.Songs))
 		for i, song := range data.Songs {
-			results[i] = app.result(c, server, song)
+			results[i] = app.toResult(c, server, song)
 		}
 		return c.JSON(200, results)
 	case "artist":
@@ -92,7 +92,7 @@ func (app *App) aplayer(c forest.Context) error {
 		}
 		results := make([]*Result, len(data.Songs))
 		for i, song := range data.Songs {
-			results[i] = app.result(c, server, song)
+			results[i] = app.toResult(c, server, song)
 		}
 		return c.JSON(200, results)
 	case "playlist":
@@ -102,7 +102,7 @@ func (app *App) aplayer(c forest.Context) error {
 		}
 		results := make([]*Result, len(data.Songs))
 		for i, song := range data.Songs {
-			results[i] = app.result(c, server, song)
+			results[i] = app.toResult(c, server, song)
 		}
 		return c.JSON(200, results)
 	default:
