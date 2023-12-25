@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+	"strings"
+
 	"meting-api/music"
 
 	"github.com/honmaple/forest"
@@ -18,12 +20,19 @@ type (
 )
 
 func (app *App) toResult(c forest.Context, server string, song *music.Song) *Result {
+	host := app.Config.GetString("server.host")
+	if host == "" {
+		host = c.Request().Host
+	}
+	if !strings.HasPrefix(host, "http://") && !strings.HasPrefix(host, "https://") {
+		host = "http://" + host
+	}
 	return &Result{
 		Title:  song.Name,
 		Author: song.GetArtist(),
 		Pic:    song.Picture,
-		Lrc:    fmt.Sprintf("%s/meting?server=%s&type=lrc&id=%s", c.Request().Host, server, song.Id),
-		Url:    fmt.Sprintf("%s/meting?server=%s&type=url&id=%s", c.Request().Host, server, song.Id),
+		Lrc:    fmt.Sprintf("%s/meting?server=%s&type=lrc&id=%s", host, server, song.Id),
+		Url:    fmt.Sprintf("%s/meting?server=%s&type=url&id=%s", host, server, song.Id),
 	}
 }
 
@@ -33,10 +42,8 @@ func (app *App) meting(c forest.Context) error {
 		return c.JSON(400, map[string]interface{}{"msg": "参数错误123"})
 	}
 
-	server := c.QueryParam("server")
-	if server == "" {
-		server = "netease"
-	}
+	server := c.QueryParam("server", "netease")
+
 	switch c.QueryParam("type") {
 	case "name":
 		data, err := app.Music.Search(server, id)

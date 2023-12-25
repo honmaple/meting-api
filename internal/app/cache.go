@@ -52,12 +52,12 @@ func (app *App) initCache() error {
 
 func (app *App) cacheResponse(c forest.Context) error {
 	req := c.Request()
-	if app.Cache == nil || req.Method != "GET" {
+	if app.Cache == nil || req.Method != "GET" || req.URL.Path != "/meting" {
 		return c.Next()
 	}
 
 	var (
-		key   = fmt.Sprintf("%s:%s", req.Method, req.URL.String())
+		key   = fmt.Sprintf("server:%s:type:%s:id:%s", c.QueryParam("server", "netease"), c.QueryParam("type"), c.QueryParam("id"))
 		value []byte
 	)
 	err := app.Cache.View(func(tx *nutsdb.Tx) error {
@@ -75,9 +75,9 @@ func (app *App) cacheResponse(c forest.Context) error {
 			app.Log.Error(err.Error())
 		} else {
 			r := c.Response()
-			for k, vs := range resp.Header {
-				for _, v := range vs {
-					r.Header().Add(k, v)
+			for k, v := range resp.Header {
+				if len(v) > 0 {
+					r.Header().Set(k, v[0])
 				}
 			}
 			if len(resp.Body) > 0 {

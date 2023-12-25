@@ -9,6 +9,7 @@ var (
 		"cache.ttl":                  3600,
 		"cache.path":                 "./cache",
 		"server.addr":                ":8000",
+		"server.host":                "",
 		"server.mode":                "",
 		"logger.out":                 "stdout",
 		"logger.level":               "info",
