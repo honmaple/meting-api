@@ -33,10 +33,10 @@ func action(clx *cli.Context) error {
 		return nil
 	}
 	if addr := clx.String("addr"); addr != "" {
-		defaultApp.Config.Set("server.addr", addr)
+		defaultApp.Set("server.addr", addr)
 	}
 	if debug := clx.Bool("debug"); debug {
-		defaultApp.Config.Set("server.mode", "dev")
+		defaultApp.Set("server.mode", "dev")
 	}
 	return defaultApp.Run()
 }
@@ -75,6 +75,23 @@ func Run() {
 		},
 		Before: before,
 		Action: action,
+		Commands: []*cli.Command{
+			&cli.Command{
+				Name:  "cache-delete",
+				Usage: "delete cache from key",
+				Action: func(clx *cli.Context) error {
+					return defaultApp.DeleteCache(clx.Args().First())
+				},
+			},
+			&cli.Command{
+				Name:  "config",
+				Usage: "show all config",
+				Action: func(clx *cli.Context) error {
+					defaultApp.ShowConfig()
+					return nil
+				},
+			},
+		},
 	}
 	if err := app.Run(os.Args); err != nil {
 		fmt.Println(err.Error())

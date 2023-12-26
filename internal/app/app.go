@@ -1,14 +1,18 @@
 package app
 
 import (
+	"embed"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
 
 	"meting-api/music"
 
 	"github.com/honmaple/forest"
 	"github.com/honmaple/forest/middleware"
+	"github.com/honmaple/forest/render"
 	"github.com/nutsdb/nutsdb"
 )
 
@@ -17,6 +21,23 @@ type App struct {
 	Cache  *nutsdb.DB
 	Music  *music.Music
 	Config *Config
+}
+
+var (
+	//go:embed templates/*
+	templateFS embed.FS
+)
+
+func (app *App) ShowConfig() {
+	keys := app.Config.AllKeys()
+	sort.Strings(keys)
+	for _, k := range keys {
+		fmt.Println(k, "=", app.Config.Get(k))
+	}
+}
+
+func (app *App) Set(key string, value any) {
+	app.Config.Set(key, value)
 }
 
 func (app *App) Run() error {
@@ -28,6 +49,7 @@ func (app *App) Run() error {
 	if conf.GetString("server.mode") == "dev" {
 		srv.SetOptions(forest.Debug())
 	}
+	srv.Renderer = render.NewTemplate(templateFS, "templates/*.html")
 
 	corsConfig := middleware.CorsConfig{
 		AllowOrigins: conf.GetStringSlice("server.cors.allow_origins"),
@@ -46,7 +68,7 @@ func (app *App) Run() error {
 
 	srv.Use(middleware.Logger(), middleware.CorsWithConfig(corsConfig))
 	srv.Use(app.cacheResponse)
-	srv.GET("/meting", app.meting)
+	srv.GET("/", app.meting)
 	return srv.Start(conf.GetString("server.addr"))
 }
 

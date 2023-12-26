@@ -14,7 +14,9 @@
       0.1.0
 
    COMMANDS:
-      help, h  Shows a list of commands or help for one command
+      cache-delete  delete cache from key
+      config        show all config
+      help, h       Shows a list of commands or help for one command
 
    GLOBAL OPTIONS:
       --debug, -D                                debug mode (default: false)
@@ -35,15 +37,18 @@
     默认将会使用缓存:
     - 禁用缓存
       #+begin_example
-      └──╼ ./meting-api -D --set-config cache.path=""
+      └──╼ ./meting-api -D --set-config cache.enabled=false
+      └──╼ METING_CACHE_ENABLED=false ./meting-api -D
       #+end_example
     - 修改缓存目录(默认为 =./cache=)
       #+begin_example
       └──╼ ./meting-api -D --set-config cache.path="/tmp/meting-cache"
+      └──╼ METING_CACHE_PATH="/tmp/meting-cache" ./meting-api -D
       #+end_example
     - 修改缓存过期时间(默认为 =3600= 秒)
       #+begin_example
       └──╼ ./meting-api -D --set-config cache.ttl=60
+      └──╼ METING_CACHE_TTL=60 ./meting-api -D
       #+end_example
 
 *** 网页端
@@ -54,7 +59,7 @@
       id="6452">
     </meting-js>
     <script type="text/javascript">
-      var meting_api='http://localhost:8000/aplayer?server=:server&type=:type&id=:id&auth=:auth&r=:r';
+      var meting_api='http://localhost:8000/?server=:server&type=:type&id=:id&auth=:auth&r=:r';
     </script>
     <script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>

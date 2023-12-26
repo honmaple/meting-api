@@ -19,7 +19,7 @@ type (
 	}
 )
 
-func (app *App) toResult(c forest.Context, server string, song *music.Song) *Result {
+func (app *App) getHost(c forest.Context) string {
 	host := app.Config.GetString("server.host")
 	if host == "" {
 		host = c.Request().Host
@@ -27,19 +27,24 @@ func (app *App) toResult(c forest.Context, server string, song *music.Song) *Res
 	if !strings.HasPrefix(host, "http://") && !strings.HasPrefix(host, "https://") {
 		host = "http://" + host
 	}
+	return host
+}
+
+func (app *App) toResult(c forest.Context, server string, song *music.Song) *Result {
+	host := app.getHost(c)
 	return &Result{
 		Title:  song.Name,
 		Author: song.GetArtist(),
 		Pic:    song.Picture,
-		Lrc:    fmt.Sprintf("%s/meting?server=%s&type=lrc&id=%s", host, server, song.Id),
-		Url:    fmt.Sprintf("%s/meting?server=%s&type=url&id=%s", host, server, song.Id),
+		Lrc:    fmt.Sprintf("%s?server=%s&type=lrc&id=%s", host, server, song.Id),
+		Url:    fmt.Sprintf("%s?server=%s&type=url&id=%s", host, server, song.Id),
 	}
 }
 
 func (app *App) meting(c forest.Context) error {
 	id := c.QueryParam("id")
 	if id == "" {
-		return c.JSON(400, map[string]interface{}{"msg": "参数错误123"})
+		return c.Render(200, "index.html", forest.H{"host": app.getHost(c), "msg": "id不能为空"})
 	}
 
 	server := c.QueryParam("server", "netease")
@@ -48,7 +53,7 @@ func (app *App) meting(c forest.Context) error {
 	case "name":
 		data, err := app.Music.Search(server, id)
 		if err != nil {
-			return c.String(400, err.Error())
+			return c.JSON(400, forest.H{"msg": err.Error()})
 		}
 		results := make([]*Result, len(data))
 		for i, song := range data {
@@ -58,7 +63,7 @@ func (app *App) meting(c forest.Context) error {
 	case "song":
 		data, err := app.Music.Song(server, id)
 		if err != nil {
-			return c.String(400, err.Error())
+			return c.JSON(400, forest.H{"msg": err.Error()})
 		}
 		results := []*Result{
 			app.toResult(c, server, data),
@@ -67,25 +72,25 @@ func (app *App) meting(c forest.Context) error {
 	case "url":
 		data, err := app.Music.SongLink(server, id)
 		if err != nil {
-			return c.String(400, err.Error())
+			return c.JSON(400, forest.H{"msg": err.Error()})
 		}
 		return c.Redirect(302, data.URL)
 	case "pic":
 		data, err := app.Music.Song(server, id)
 		if err != nil {
-			return c.String(400, err.Error())
+			return c.JSON(400, forest.H{"msg": err.Error()})
 		}
 		return c.Redirect(302, data.Picture)
 	case "lrc":
 		data, err := app.Music.Lyric(server, id)
 		if err != nil {
-			return c.String(400, err.Error())
+			return c.JSON(400, forest.H{"msg": err.Error()})
 		}
 		return c.String(200, data.Lyric)
 	case "album":
 		data, err := app.Music.Album(server, id)
 		if err != nil {
-			return c.String(400, err.Error())
+			return c.JSON(400, forest.H{"msg": err.Error()})
 		}
 		results := make([]*Result, len(data.Songs))
 		for i, song := range data.Songs {
@@ -95,7 +100,7 @@ func (app *App) meting(c forest.Context) error {
 	case "artist":
 		data, err := app.Music.Artist(server, id)
 		if err != nil {
-			return c.String(400, err.Error())
+			return c.JSON(400, forest.H{"msg": err.Error()})
 		}
 		results := make([]*Result, len(data.Songs))
 		for i, song := range data.Songs {
@@ -105,7 +110,7 @@ func (app *App) meting(c forest.Context) error {
 	case "playlist":
 		data, err := app.Music.Playlist(server, id)
 		if err != nil {
-			return c.String(400, err.Error())
+			return c.JSON(400, forest.H{"msg": err.Error()})
 		}
 		results := make([]*Result, len(data.Songs))
 		for i, song := range data.Songs {
@@ -113,6 +118,6 @@ func (app *App) meting(c forest.Context) error {
 		}
 		return c.JSON(200, results)
 	default:
-		return c.JSON(400, map[string]interface{}{"msg": "参数错误321"})
+		return c.Render(200, "index.html", forest.H{"host": app.getHost(c), "msg": "type错误"})
 	}
 }

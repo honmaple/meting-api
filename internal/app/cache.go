@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,6 +30,10 @@ func (w *responseWriter) Write(b []byte) (int, error) {
 }
 
 func (app *App) initCache() error {
+	if !app.Config.GetBool("cache.enabled") {
+		return nil
+	}
+
 	path := app.Config.GetString("cache.path")
 	if path == "" {
 		return nil
@@ -52,7 +57,7 @@ func (app *App) initCache() error {
 
 func (app *App) cacheResponse(c forest.Context) error {
 	req := c.Request()
-	if app.Cache == nil || req.Method != "GET" || req.URL.Path != "/meting" {
+	if app.Cache == nil || req.Method != "GET" {
 		return c.Next()
 	}
 
@@ -116,4 +121,13 @@ func (app *App) cacheResponse(c forest.Context) error {
 		}
 	}()
 	return c.Next()
+}
+
+func (app *App) DeleteCache(key string) error {
+	if key == "" {
+		return errors.New("cache key is null")
+	}
+	return app.Cache.Update(func(tx *nutsdb.Tx) error {
+		return tx.Delete(bucket, []byte(key))
+	})
 }
