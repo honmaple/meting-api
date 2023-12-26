@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"meting-api/music"
 
@@ -104,6 +105,7 @@ func (self *netease) toSong(result gjson.Result) *music.Song {
 		Name:    result.Get("name").String(),
 		Picture: result.Get("al.picUrl").String(),
 	}
+	song.Picture = strings.ReplaceAll(song.Picture, "http://", "https://")
 	if arts := result.Get("ar").Array(); len(arts) > 0 {
 		artist := make([]*music.Artist, len(arts))
 		for i, art := range arts {
@@ -150,8 +152,9 @@ func (self *netease) SongLink(id string) (*music.SongLink, error) {
 		Id:   result.Get("data.0.id").String(),
 		URL:  result.Get("data.0.url").String(),
 		Br:   result.Get("data.0.br").Int(),
-		Size: result.Get("data.0.url").Int(),
+		Size: result.Get("data.0.size").Int(),
 	}
+	link.URL = strings.ReplaceAll(link.URL, "http://", "https://")
 	return link, nil
 }
 
