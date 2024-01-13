@@ -51,6 +51,9 @@ func (self *tencent) request(method, url string, data map[string]string) ([]byte
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
+	for k, v := range self.config.GetStringMapString("tencent.headers") {
+		req.Header.Set(k, v)
+	}
 
 	resp, err := self.client.Do(req)
 	if err != nil {

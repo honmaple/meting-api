@@ -1,5 +1,5 @@
 ** Meting-API
-   使用 *Go* 实现的 *meting-js* 接口，主要用于替换 [[https://github.com/metowolf/MetingJS][MetingJS]] 的默认API, 当前 *支持网易云音乐和QQ音乐*
+   使用 *Go* 实现的 *meting-js* 接口，主要用于替换 [[https://github.com/metowolf/MetingJS][MetingJS]] 的默认API, 当前 *支持网易云音乐、网易云音乐API、QQ音乐*
 
 ** 使用
    #+begin_example
@@ -50,6 +50,12 @@
       └──╼ ./meting-api -D --set-config cache.ttl=60
       └──╼ METING_CACHE_TTL=60 ./meting-api -D
       #+end_example
+
+    如果使用网易云音乐API，需要自行部署 [[https://github.com/Binaryify/NeteaseCloudMusicApi][NeteaseCloudMusicApi]]，并设置
+    #+begin_example
+    └──╼ ./meting-api -D --set-config netease_api.host=https://netease_api.xxx.com
+    └──╼ METING_NETEASE_API_HOST=https://netease_api.xxx.com ./meting-api -D
+    #+end_example
 
 *** 网页端
     #+begin_src html

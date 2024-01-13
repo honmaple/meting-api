@@ -1,8 +1,9 @@
 package app
 
 import (
-	"github.com/spf13/viper"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 var (
@@ -20,6 +21,7 @@ var (
 		"logger.level":               "info",
 		"logger.file_format":         "%Y%m%d",
 		"logger.file_rotation_count": 3,
+		"netease_api.host":           "",
 	}
 )
 

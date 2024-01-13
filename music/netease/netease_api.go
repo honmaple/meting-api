@@ -1,10 +1,7 @@
 package netease
 
 import (
-	"compress/gzip"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -15,12 +12,18 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-type netease struct {
+type neteaseApi struct {
 	client *http.Client
 	config *music.Config
 }
 
-func (self *netease) request(method, url string, data map[string]string) ([]byte, error) {
+func (self *neteaseApi) request(method, url string, data map[string]string) ([]byte, error) {
+	host := self.config.GetString("netease_api.host")
+	if host == "" {
+		return nil, errors.New("netease api is required")
+	}
+	url = strings.TrimSuffix(host, "/") + url
+
 	var body io.Reader
 
 	if method != "GET" && data != nil {
@@ -42,11 +45,9 @@ func (self *netease) request(method, url string, data map[string]string) ([]byte
 
 	headers := map[string]string{
 		"Referer":         "https://music.163.com",
-		"Cookie":          "appver=8.2.30; os=iPhone OS; osver=15.0; EVNSM=1.0.0; buildver=2206; channel=distribution; machineid=iPhone13.3",
 		"User-Agent":      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_5, AppleWebKit/605.1.15 (KHTML, like Gecko,",
 		"X-Real-IP":       randomIP(),
 		"Accept":          "*/*",
-		"Accept-Encoding": "gzip,deflate,sdch",
 		"Accept-Language": "zh-CN,zh;q=0.8,gl;q=0.6,zh-TW;q=0.4",
 		"Connection":      "keep-alive",
 		"Content-Type":    "application/x-www-form-urlencoded",
@@ -54,7 +55,7 @@ func (self *netease) request(method, url string, data map[string]string) ([]byte
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
-	for k, v := range self.config.GetStringMapString("netease.headers") {
+	for k, v := range self.config.GetStringMapString("netease_api.headers") {
 		req.Header.Set(k, v)
 	}
 
@@ -68,41 +69,10 @@ func (self *netease) request(method, url string, data map[string]string) ([]byte
 		return nil, errors.New("result is null")
 	}
 
-	gz, err := gzip.NewReader(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer gz.Close()
-
-	return ioutil.ReadAll(gz)
+	return ioutil.ReadAll(resp.Body)
 }
 
-func (self *netease) weapi(data map[string]string) map[string]string {
-	text, err := json.Marshal(data)
-	if err != nil {
-		return data
-	}
-
-	const (
-		iv        = "0102030405060708"
-		presetKey = "0CoJUm6Qyw8W8jud"
-		publicKey = "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDgtQn2JZ34ZC28NWYpAUd98iZ37BUrX/aKzmFbt7clFSs6sXqHauqKWqdtLkF2KexO40H1YTX8z2lSgBBOAxLsvaklV8k4cBFK9snQXE9/DDaFt6Rr7iVZMldczhC0JNgTz+SHXT6CBHuX3e9SdB1Ua44oncaTWz7OBGLbCiK45wIDAQAB\n-----END PUBLIC KEY-----"
-		charset   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	)
-
-	secret := randomBytes(16, charset)
-
-	text = base64Bytes(aesEncrypt(text, []byte(presetKey), []byte(iv)))
-	text = base64Bytes(aesEncrypt(text, secret, []byte(iv)))
-
-	enck := hexBytes(rsaEncrypt(reverseBytes(secret), []byte(publicKey)))
-	return map[string]string{
-		"params":    string(text),
-		"encSecKey": string(enck),
-	}
-}
-
-func (self *netease) toSong(result gjson.Result) *music.Song {
+func (self *neteaseApi) toSong(result gjson.Result) *music.Song {
 	song := &music.Song{
 		Id:      result.Get("id").String(),
 		Name:    result.Get("name").String(),
@@ -122,15 +92,12 @@ func (self *netease) toSong(result gjson.Result) *music.Song {
 	return song
 }
 
-func (self *netease) Song(id string) (*music.Song, error) {
-	b, _ := json.Marshal([]any{map[string]string{
-		"id": id,
-	}})
+func (self *neteaseApi) Song(id string) (*music.Song, error) {
 	data := map[string]string{
-		"c": string(b),
+		"ids": id,
 	}
 
-	res, err := self.request("POST", "https://music.163.com/weapi/v3/song/detail/", self.weapi(data))
+	res, err := self.request("GET", "/song/detail", data)
 	if err != nil {
 		return nil, err
 	}
@@ -138,13 +105,13 @@ func (self *netease) Song(id string) (*music.Song, error) {
 	return self.toSong(result), nil
 }
 
-func (self *netease) SongLink(id string) (*music.SongLink, error) {
+func (self *neteaseApi) SongLink(id string) (*music.SongLink, error) {
 	data := map[string]string{
-		"br":  fmt.Sprintf("%d", 320*1000),
-		"ids": fmt.Sprintf(`["%s"]`, id),
+		"id": id,
+		// "br": fmt.Sprintf("%d", 320*1000),
 	}
 
-	res, err := self.request("POST", "http://music.163.com/weapi/song/enhance/player/url", self.weapi(data))
+	res, err := self.request("GET", "/song/url", data)
 	if err != nil {
 		return nil, err
 	}
@@ -161,17 +128,12 @@ func (self *netease) SongLink(id string) (*music.SongLink, error) {
 	return link, nil
 }
 
-func (self *netease) Album(id string) (*music.Album, error) {
+func (self *neteaseApi) Album(id string) (*music.Album, error) {
 	data := map[string]string{
-		"id":            id,
-		"total":         "true",
-		"offset":        "0",
-		"limit":         "1000",
-		"ext":           "true",
-		"private_cloud": "true",
+		"id": id,
 	}
 
-	res, err := self.request("POST", fmt.Sprintf(`https://music.163.com/weapi/v1/album/%s`, id), self.weapi(data))
+	res, err := self.request("GET", "/album", data)
 	if err != nil {
 		return nil, err
 	}
@@ -192,16 +154,12 @@ func (self *netease) Album(id string) (*music.Album, error) {
 	return album, nil
 }
 
-func (self *netease) Lyric(id string) (*music.Lyric, error) {
+func (self *neteaseApi) Lyric(id string) (*music.Lyric, error) {
 	data := map[string]string{
 		"id": id,
-		"os": "linux",
-		"lv": "-1",
-		"kv": "-1",
-		"tv": "-1",
 	}
 
-	res, err := self.request("POST", "https://music.163.com/weapi/song/lyric", self.weapi(data))
+	res, err := self.request("GET", "/lyric", data)
 	if err != nil {
 		return nil, err
 	}
@@ -215,15 +173,14 @@ func (self *netease) Lyric(id string) (*music.Lyric, error) {
 	return lrc, nil
 }
 
-func (self *netease) Artist(id string) (*music.Artist, error) {
+func (self *neteaseApi) Artist(id string) (*music.Artist, error) {
 	data := map[string]string{
-		"id":            id,
-		"top":           "50",
-		"ext":           "true",
-		"prevate_cloud": "true",
+		"id":    id,
+		"order": "hot",
+		"limit": "50",
 	}
 
-	res, err := self.request("POST", fmt.Sprintf("https://music.163.com/weapi/v1/artist/%s", id), self.weapi(data))
+	res, err := self.request("GET", "/artist/songs", data)
 	if err != nil {
 		return nil, err
 	}
@@ -231,10 +188,9 @@ func (self *netease) Artist(id string) (*music.Artist, error) {
 	result := gjson.ParseBytes(res)
 
 	ins := &music.Artist{
-		Id:   result.Get("artist.id").String(),
-		Name: result.Get("artist.name").String(),
+		Id: id,
 	}
-	if hots := result.Get("hotSongs").Array(); len(hots) > 0 {
+	if hots := result.Get("songs").Array(); len(hots) > 0 {
 		songs := make([]*music.Song, len(hots))
 		for i, hot := range hots {
 			songs[i] = self.toSong(hot)
@@ -244,15 +200,12 @@ func (self *netease) Artist(id string) (*music.Artist, error) {
 	return ins, nil
 }
 
-func (self *netease) Playlist(id string) (*music.Playlist, error) {
+func (self *neteaseApi) Playlist(id string) (*music.Playlist, error) {
 	data := map[string]string{
 		"id": id,
-		"n":  "1000",
-		"s":  "0",
-		"t":  "0",
 	}
 
-	res, err := self.request("POST", "https://music.163.com/weapi/v6/playlist/detail", self.weapi(data))
+	res, err := self.request("GET", "/playlist/track/all", data)
 	if err != nil {
 		return nil, err
 	}
@@ -260,10 +213,9 @@ func (self *netease) Playlist(id string) (*music.Playlist, error) {
 	result := gjson.ParseBytes(res)
 
 	ins := &music.Playlist{
-		Id:   result.Get("playlist.id").String(),
-		Name: result.Get("playlist.name").String(),
+		Id: id,
 	}
-	if tracks := result.Get("playlist.tracks").Array(); len(tracks) > 0 {
+	if tracks := result.Get("songs").Array(); len(tracks) > 0 {
 		songs := make([]*music.Song, len(tracks))
 		for i, track := range tracks {
 			songs[i] = self.toSong(track)
@@ -273,16 +225,14 @@ func (self *netease) Playlist(id string) (*music.Playlist, error) {
 	return ins, nil
 }
 
-func (self *netease) Search(keyword string) ([]*music.Song, error) {
+func (self *neteaseApi) Search(keyword string) ([]*music.Song, error) {
 	data := map[string]string{
-		"s":      keyword,
-		"type":   "1",
-		"limit":  "10",
-		"total":  "true",
-		"offset": "0",
+		"type":     "1",
+		"limit":    "30",
+		"keywords": keyword,
 	}
 
-	res, err := self.request("POST", "https://music.163.com/weapi/cloudsearch/pc", self.weapi(data))
+	res, err := self.request("GET", "/cloudsearch", data)
 	if err != nil {
 		return nil, err
 	}
@@ -297,8 +247,8 @@ func (self *netease) Search(keyword string) ([]*music.Song, error) {
 }
 
 func init() {
-	music.Register("netease", func(config *music.Config, client *http.Client) music.Server {
-		return &netease{
+	music.Register("netease_api", func(config *music.Config, client *http.Client) music.Server {
+		return &neteaseApi{
 			config: config,
 			client: client,
 		}
